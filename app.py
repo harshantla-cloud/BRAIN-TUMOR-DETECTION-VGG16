@@ -1,9 +1,9 @@
 import os
+import urllib.request
 import numpy as np
-import streamlit as st
 from PIL import Image
+import streamlit as st
 from tensorflow.keras.models import load_model
-
 
 # ============================================================
 # PAGE CONFIGURATION
@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="Brain Tumor Detection | VGG16",
     page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
@@ -76,7 +76,7 @@ st.markdown(
 
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -85,15 +85,11 @@ st.markdown(
 # ============================================================
 
 MODEL_PATH = "brain_tumor_model.keras"
+MODEL_URL = "https://github.com/harshantla-cloud/BRAIN-TUMOR-DETECTION-VGG16/releases/download/v1.0/brain_tumor_model.keras"
 
 IMAGE_SIZE = (128, 128)
 
-CLASS_NAMES = [
-    "Glioma",
-    "Meningioma",
-    "No Tumor",
-    "Pituitary Tumor"
-]
+CLASS_NAMES = ["Glioma", "Meningioma", "No Tumor", "Pituitary Tumor"]
 
 
 # ============================================================
@@ -102,37 +98,37 @@ CLASS_NAMES = [
 
 with st.sidebar:
 
-    st.markdown(
-        '<div class="sidebar-title">🧠 Model Information</div>',
-        unsafe_allow_html=True
-    )
+  st.markdown(
+      '<div class="sidebar-title">🧠 Model Information</div>',
+      unsafe_allow_html=True,
+  )
 
-    st.write("")
+  st.write("")
 
-    st.markdown("### Architecture")
-    st.write("VGG16")
+  st.markdown("### Architecture")
+  st.write("VGG16")
 
-    st.markdown("### Task")
-    st.write("Multi-class Brain MRI Classification")
+  st.markdown("### Task")
+  st.write("Multi-class Brain MRI Classification")
 
-    st.markdown("### Input Size")
-    st.write("128 × 128 pixels")
+  st.markdown("### Input Size")
+  st.write("128 × 128 pixels")
 
-    st.markdown("### Classes")
-    for class_name in CLASS_NAMES:
-        st.write(f"• {class_name}")
+  st.markdown("### Classes")
+  for class_name in CLASS_NAMES:
+    st.write(f"• {class_name}")
 
-    st.divider()
+  st.divider()
 
-    st.markdown("### Supported Images")
-    st.write("JPG, JPEG, PNG")
+  st.markdown("### Supported Images")
+  st.write("JPG, JPEG, PNG")
 
-    st.divider()
+  st.divider()
 
-    st.info(
-        "This application is developed for educational "
-        "and demonstration purposes."
-    )
+  st.info(
+      "This application is developed for educational "
+      "and demonstration purposes."
+  )
 
 
 # ============================================================
@@ -141,32 +137,32 @@ with st.sidebar:
 
 st.markdown(
     '<div class="main-title">🧠 Brain Tumor Detection</div>',
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 st.markdown(
-    '<div class="subtitle">'
-    'VGG16-based Brain MRI Image Classification'
-    '</div>',
-    unsafe_allow_html=True
+    '<div class="subtitle">VGG16-based Brain MRI Image'
+    " Classification</div>",
+    unsafe_allow_html=True,
 )
 
 
 # ============================================================
-# MODEL LOADING FUNCTION
+# MODEL LOADING FUNCTION (WITH AUTO-DOWNLOAD)
 # ============================================================
+
 
 @st.cache_resource
 def load_brain_model():
+  # Agar local disk par model nahi hai, toh GitHub release se download karega
+  if not os.path.exists(MODEL_PATH):
+    with st.spinner(
+        "Downloading model weights (122 MB)... please wait a moment."
+    ):
+      urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
 
-    if not os.path.exists(MODEL_PATH):
-        raise FileNotFoundError(
-            f"Model file '{MODEL_PATH}' was not found."
-        )
-
-    model = load_model(MODEL_PATH)
-
-    return model
+  model = load_model(MODEL_PATH)
+  return model
 
 
 # ============================================================
@@ -174,29 +170,21 @@ def load_brain_model():
 # ============================================================
 
 try:
-
-    model = load_brain_model()
-
-    st.success(
-        "✅ VGG16 model loaded successfully."
-    )
+  model = load_brain_model()
+  st.success("✅ VGG16 model loaded successfully.")
 
 except Exception as e:
+  st.error("❌ Unable to load the trained model.")
 
-    st.error(
-        "❌ Unable to load the trained model."
-    )
+  with st.expander("Show technical details"):
+    st.exception(e)
 
-    with st.expander("Show technical details"):
+  st.info(
+      "Make sure that the model release URL is accessible or that"
+      " 'brain_tumor_model.keras' is present."
+  )
 
-        st.exception(e)
-
-    st.info(
-        "Make sure that 'brain_tumor_model.keras' "
-        "is present in the same directory as app.py."
-    )
-
-    st.stop()
+  st.stop()
 
 
 # ============================================================
@@ -220,13 +208,13 @@ st.markdown(
 
 st.markdown(
     '<div class="section-title">📤 Upload MRI Image</div>',
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 uploaded_file = st.file_uploader(
     "Select a brain MRI image",
     type=["jpg", "jpeg", "png"],
-    help="Upload a clear brain MRI image in JPG, JPEG, or PNG format."
+    help="Upload a clear brain MRI image in JPG, JPEG, or PNG format.",
 )
 
 
@@ -236,242 +224,185 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    try:
+  try:
 
-        # ----------------------------------------------------
-        # LOAD IMAGE
-        # ----------------------------------------------------
+    # ----------------------------------------------------
+    # LOAD IMAGE
+    # ----------------------------------------------------
 
-        image = Image.open(uploaded_file).convert("RGB")
+    image = Image.open(uploaded_file).convert("RGB")
 
-        # ----------------------------------------------------
-        # DISPLAY IMAGE
-        # ----------------------------------------------------
+    # ----------------------------------------------------
+    # DISPLAY IMAGE
+    # ----------------------------------------------------
 
-        col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([1, 1])
 
-        with col1:
+    with col1:
 
-            st.markdown("### 🖼️ Uploaded MRI")
+      st.markdown("### 🖼️ Uploaded MRI")
 
-            st.image(
-                image,
-                caption="Uploaded Brain MRI",
-                use_container_width=True
-            )
+      st.image(
+          image, caption="Uploaded Brain MRI", use_container_width=True
+      )
 
-        with col2:
+    with col2:
 
-            st.markdown("### 📋 Image Information")
+      st.markdown("### 📋 Image Information")
 
-            width, height = image.size
+      width, height = image.size
 
-            st.write(f"**File name:** {uploaded_file.name}")
-            st.write(f"**Original size:** {width} × {height}")
-            st.write(f"**Image mode:** {image.mode}")
+      st.write(f"**File name:** {uploaded_file.name}")
+      st.write(f"**Original size:** {width} × {height}")
+      st.write(f"**Image mode:** {image.mode}")
 
-            st.write(
-                "**Model input:** "
-                f"{IMAGE_SIZE[0]} × {IMAGE_SIZE[1]}"
-            )
+      st.write(
+          "**Model input:** " f"{IMAGE_SIZE[0]} × {IMAGE_SIZE[1]}"
+      )
 
+    st.divider()
 
-        st.divider()
+    # ----------------------------------------------------
+    # PREPROCESS IMAGE
+    # ----------------------------------------------------
 
+    image_resized = image.resize(IMAGE_SIZE)
 
-        # ----------------------------------------------------
-        # PREPROCESS IMAGE
-        # ----------------------------------------------------
+    image_array = np.asarray(image_resized, dtype=np.float32)
 
-        image_resized = image.resize(
-            IMAGE_SIZE
-        )
+    # Normalize pixel values
+    image_array = image_array / 255.0
 
-        image_array = np.asarray(
-            image_resized,
-            dtype=np.float32
-        )
+    # Add batch dimension
+    image_array = np.expand_dims(image_array, axis=0)
 
-        # Normalize pixel values
-        image_array = image_array / 255.0
+    # ----------------------------------------------------
+    # PREDICTION
+    # ----------------------------------------------------
 
-        # Add batch dimension
-        image_array = np.expand_dims(
-            image_array,
-            axis=0
-        )
+    with st.spinner("🔍 Analyzing MRI image..."):
 
+      predictions = model.predict(image_array, verbose=0)
 
-        # ----------------------------------------------------
-        # PREDICTION
-        # ----------------------------------------------------
+    # ----------------------------------------------------
+    # VALIDATE MODEL OUTPUT
+    # ----------------------------------------------------
 
-        with st.spinner(
-            "🔍 Analyzing MRI image..."
-        ):
+    if predictions.shape[-1] != len(CLASS_NAMES):
 
-            predictions = model.predict(
-                image_array,
-                verbose=0
-            )
+      st.error(
+          "Model output does not match the configured "
+          "number of classes."
+      )
 
+      st.stop()
 
-        # ----------------------------------------------------
-        # VALIDATE MODEL OUTPUT
-        # ----------------------------------------------------
+    # ----------------------------------------------------
+    # GET PREDICTION
+    # ----------------------------------------------------
 
-        if predictions.shape[-1] != len(CLASS_NAMES):
+    predicted_index = int(np.argmax(predictions[0]))
 
-            st.error(
-                "Model output does not match the configured "
-                "number of classes."
-            )
+    predicted_class = CLASS_NAMES[predicted_index]
 
-            st.stop()
+    confidence = float(predictions[0][predicted_index]) * 100
 
+    # ====================================================
+    # RESULT
+    # ====================================================
 
-        # ----------------------------------------------------
-        # GET PREDICTION
-        # ----------------------------------------------------
+    st.markdown(
+        '<div class="section-title">🔎 Prediction Result</div>',
+        unsafe_allow_html=True,
+    )
 
-        predicted_index = int(
-            np.argmax(predictions[0])
-        )
+    result_col1, result_col2 = st.columns(2)
 
-        predicted_class = CLASS_NAMES[
-            predicted_index
-        ]
+    with result_col1:
 
-        confidence = float(
-            predictions[0][predicted_index]
-        ) * 100
+      st.success(f"### Prediction\n**{predicted_class}**")
 
+    with result_col2:
 
-        # ====================================================
-        # RESULT
-        # ====================================================
+      st.metric(
+          label="Prediction Confidence", value=f"{confidence:.2f}%"
+      )
 
-        st.markdown(
-            '<div class="section-title">🔎 Prediction Result</div>',
-            unsafe_allow_html=True
-        )
+    # ----------------------------------------------------
+    # CONFIDENCE INTERPRETATION
+    # ----------------------------------------------------
 
-        result_col1, result_col2 = st.columns(2)
+    if confidence >= 90:
 
-        with result_col1:
+      st.info(
+          "The model produced a high-confidence prediction "
+          "for this image."
+      )
 
-            st.success(
-                f"### Prediction\n"
-                f"**{predicted_class}**"
-            )
+    elif confidence >= 70:
 
-        with result_col2:
+      st.info(
+          "The model produced a moderate-to-high confidence "
+          "prediction."
+      )
 
-            st.metric(
-                label="Prediction Confidence",
-                value=f"{confidence:.2f}%"
-            )
+    else:
 
+      st.warning(
+          "The model confidence is relatively low. "
+          "This prediction should be treated cautiously."
+      )
 
-        # ----------------------------------------------------
-        # CONFIDENCE INTERPRETATION
-        # ----------------------------------------------------
+    st.divider()
 
-        if confidence >= 90:
+    # ====================================================
+    # CLASS PROBABILITIES
+    # ====================================================
 
-            st.info(
-                "The model produced a high-confidence prediction "
-                "for this image."
-            )
+    st.markdown(
+        '<div class="section-title">📊 Class Probabilities</div>',
+        unsafe_allow_html=True,
+    )
 
-        elif confidence >= 70:
+    probabilities = predictions[0]
 
-            st.info(
-                "The model produced a moderate-to-high confidence "
-                "prediction."
-            )
+    for index, class_name in enumerate(CLASS_NAMES):
 
-        else:
+      probability = float(probabilities[index])
 
-            st.warning(
-                "The model confidence is relatively low. "
-                "This prediction should be treated cautiously."
-            )
+      percentage = probability * 100
 
+      st.write(f"**{class_name} — {percentage:.2f}%**")
 
-        st.divider()
+      st.progress(min(max(probability, 0.0), 1.0))
 
+    # ====================================================
+    # MODEL SUMMARY
+    # ====================================================
 
-        # ====================================================
-        # CLASS PROBABILITIES
-        # ====================================================
+    st.divider()
 
-        st.markdown(
-            '<div class="section-title">📊 Class Probabilities</div>',
-            unsafe_allow_html=True
-        )
+    with st.expander("🔬 View Prediction Details"):
 
-        probabilities = predictions[0]
+      st.write(f"**Predicted class index:** {predicted_index}")
 
-        for index, class_name in enumerate(CLASS_NAMES):
+      st.write(f"**Predicted class:** {predicted_class}")
 
-            probability = float(
-                probabilities[index]
-            )
+      st.write(f"**Confidence:** {confidence:.2f}%")
 
-            percentage = probability * 100
+      st.write(
+          f"**Input dimensions:** {IMAGE_SIZE[0]} × {IMAGE_SIZE[1]} × 3"
+      )
 
-            st.write(
-                f"**{class_name} — {percentage:.2f}%**"
-            )
+      st.write("**Normalization:** Pixel values divided by 255")
 
-            st.progress(
-                min(max(probability, 0.0), 1.0)
-            )
+  except Exception as e:
 
+    st.error("❌ An error occurred while processing the image.")
 
-        # ====================================================
-        # MODEL SUMMARY
-        # ====================================================
+    with st.expander("Show technical details"):
 
-        st.divider()
-
-        with st.expander("🔬 View Prediction Details"):
-
-            st.write(
-                f"**Predicted class index:** "
-                f"{predicted_index}"
-            )
-
-            st.write(
-                f"**Predicted class:** "
-                f"{predicted_class}"
-            )
-
-            st.write(
-                f"**Confidence:** "
-                f"{confidence:.2f}%"
-            )
-
-            st.write(
-                f"**Input dimensions:** "
-                f"{IMAGE_SIZE[0]} × {IMAGE_SIZE[1]} × 3"
-            )
-
-            st.write(
-                "**Normalization:** Pixel values divided by 255"
-            )
-
-
-    except Exception as e:
-
-        st.error(
-            "❌ An error occurred while processing the image."
-        )
-
-        with st.expander("Show technical details"):
-
-            st.exception(e)
+      st.exception(e)
 
 
 # ============================================================
@@ -480,12 +411,10 @@ if uploaded_file is not None:
 
 else:
 
-    st.info(
-        "👆 Upload an MRI image above to start the prediction."
-    )
+  st.info("👆 Upload an MRI image above to start the prediction.")
 
-    st.markdown(
-        """
+  st.markdown(
+      """
         **Prediction categories:**
 
         - 🧠 Glioma
@@ -493,7 +422,7 @@ else:
         - ✅ No Tumor
         - 🧠 Pituitary Tumor
         """
-    )
+  )
 
 
 # ============================================================
@@ -526,5 +455,5 @@ st.markdown(
         Brain Tumor Detection using VGG16 • Deep Learning Project
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
